@@ -7,10 +7,11 @@ class InitGame
 	constructor: (@screen) ->
 		@ctx = @screen.getContext '2d'
 		@scrSize = x: @screen.width, y: @screen.height
-		@objects = [new Player @]
+		@objects = []
 
 	start: ->
 		do @addEnemies
+		@objects.push new Player @
 		do @tick
 
 	tick: ->
@@ -18,14 +19,18 @@ class InitGame
 		do @draw
 		requestAnimationFrame @tick.bind @
 
+
 	clean: ->
 		@ctx.clearRect 0, 0, @scrSize.x, @scrSize.y
 
+
 	update: ->
+
 		notCollision = (o1) =>
 			@objects.filter (o2) =>
 				@collision o1, o2
 			.length == 0
+
 		@objects = @objects.filter notCollision
 
 		win = @objects.some (item) ->
@@ -33,12 +38,14 @@ class InitGame
 
 		lose = @objects.some (item) ->
 			item instanceof Player
+
 		if not win
 			alert "Поздравляю!!! Вы победили Инопланетных Захватчиков! Но радары засекли еще одну волну! Нажми \"Ok\" чтобы разгромить врага!"
 			location.reload on
 		if not lose
 			alert "К сожалению ваш корабль был разбить суровым натиском инопланетных захватчиков но ты успел эвакуироваться на базу где тебя ждет новый корабль! Нажми \"Ok\" чтобы дать отпор врагу еще раз!"
 			location.reload on
+
 		@objects.forEach (item, i) =>
 			if item.pos.y < 0 or item.pos.y >= @scrSize.y
 				@objects.splice i, 1
@@ -71,10 +78,12 @@ class InitGame
 			y = 3
 
 	collision : (o1, o2) ->
+
 		!(o1 == o2 or
-			o1.pos.x + o1.size.width / 2 < o2.pos.x - o2.size.width / 2 or
+			o1.pos.x + o1.size.width < o2.pos.x or
 			o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 or
-			o1.pos.x - o1.size.width / 2 > o2.pos.x + o2.size.width / 2 or
-			o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2)
+			o1.pos.x > o2.pos.x + o2.size.width or
+			o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2
+		)
 
 module.exports = InitGame

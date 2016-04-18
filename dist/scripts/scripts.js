@@ -101,11 +101,12 @@ InitGame = (function() {
       x: this.screen.width,
       y: this.screen.height
     };
-    this.objects = [new Player(this)];
+    this.objects = [];
   }
 
   InitGame.prototype.start = function() {
     this.addEnemies();
+    this.objects.push(new Player(this));
     return this.tick();
   };
 
@@ -205,7 +206,7 @@ InitGame = (function() {
   };
 
   InitGame.prototype.collision = function(o1, o2) {
-    return !(o1 === o2 || o1.pos.x + o1.size.width / 2 < o2.pos.x - o2.size.width / 2 || o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 || o1.pos.x - o1.size.width / 2 > o2.pos.x + o2.size.width / 2 || o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2);
+    return !(o1 === o2 || o1.pos.x + o1.size.width < o2.pos.x || o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 || o1.pos.x > o2.pos.x + o2.size.width || o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2);
   };
 
   return InitGame;
@@ -239,6 +240,7 @@ Player = (function() {
   function Player(data) {
     this.data = data;
     this.shoot = bind(this.shoot, this);
+    this.screenWidth = this.data.scrSize.x - 30;
     this.size = {
       width: 20,
       height: 15
@@ -252,13 +254,11 @@ Player = (function() {
   }
 
   Player.prototype.update = function() {
-    var width;
-    width = this.data.scrSize.x - 30;
     if (this.x < 10) {
       this.x = 10;
     }
-    if (this.x > width) {
-      this.x = width;
+    if (this.x > this.screenWidth) {
+      this.x = this.screenWidth;
     }
     return this.pos.x = this.x;
   };
