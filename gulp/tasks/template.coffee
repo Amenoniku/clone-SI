@@ -4,7 +4,7 @@ plumber = require "gulp-plumber"
 paths = require "../paths"
 
 data = 
-	title: "PEOPLE"
+	title: "clone Space Invaders"
 
 gulp.task "jade", ->
 	gulp.src "content/views/root/*.jade"

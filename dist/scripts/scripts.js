@@ -13,7 +13,11 @@ Bullet = (function() {
     this.gravity = gravity;
     this.size = {
       width: 3,
-      height: 7
+      height: 6
+    };
+    this.icon = {
+      x: 152,
+      y: 65
     };
   }
 
@@ -40,12 +44,42 @@ Bullet = require("./bullet");
 
 Enemy = (function() {
   function Enemy(data, pos, size, ind) {
+    var icon, length, randomIcons;
     this.data = data;
     this.pos = pos;
     this.size = size;
     this.ind = ind;
     this.moveX = 0;
     this.speed = 1;
+    randomIcons = [
+      icon = {
+        x: 9,
+        y: 0
+      }, icon = {
+        x: 57,
+        y: 0
+      }, icon = {
+        x: 98.5,
+        y: 0
+      }, icon = {
+        x: 139,
+        y: 0
+      }, icon = {
+        x: 9,
+        y: 30
+      }, icon = {
+        x: 57,
+        y: 30
+      }, icon = {
+        x: 98.5,
+        y: 30
+      }, icon = {
+        x: 139,
+        y: 30
+      }
+    ];
+    length = Math.floor(Math.random() * randomIcons.length);
+    this.icon = randomIcons[length];
   }
 
   Enemy.prototype.update = function() {
@@ -65,7 +99,7 @@ Enemy = (function() {
 
   Enemy.prototype.shoot = function() {
     var bullet, bulletCoors;
-    if (Math.random() < 0.02 && !this.isLower(this)) {
+    if (Math.random() < 0.04 && !this.isLower(this)) {
       bulletCoors = {
         x: this.pos.x + this.size.width / 2,
         y: this.pos.y + this.size.height / 2 + this.size.height / 2
@@ -102,12 +136,18 @@ InitGame = (function() {
       y: this.screen.height
     };
     this.objects = [];
+    this.icons = new Image;
+    this.icons.src = './images/icons.png';
   }
 
   InitGame.prototype.start = function() {
-    this.addEnemies();
-    this.objects.push(new Player(this));
-    return this.tick();
+    return this.icons.onload = (function(_this) {
+      return function() {
+        _this.objects.push(new Player(_this));
+        _this.addEnemies();
+        return _this.tick();
+      };
+    })(this);
   };
 
   InitGame.prototype.tick = function() {
@@ -160,22 +200,19 @@ InitGame = (function() {
   InitGame.prototype.draw = function() {
     this.clean();
     return this.objects.forEach((function(_this) {
-      return function(item) {
-        return _this.drawRect(item);
+      return function(obj) {
+        _this.ctx.fillStyle = "rgba(0, 0, 0, 0)";
+        _this.ctx.fillRect(obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
+        return _this.ctx.drawImage(_this.icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
       };
     })(this));
-  };
-
-  InitGame.prototype.drawRect = function(obj) {
-    this.ctx.fillStyle = "#0A8D00";
-    return this.ctx.fillRect(obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
   };
 
   InitGame.prototype.addEnemies = function() {
     var i, ind, j, k, pos, results, size, x, y;
     size = {
-      width: 20,
-      height: 20
+      width: 29,
+      height: 25
     };
     x = 3;
     y = 3;
@@ -240,14 +277,18 @@ Player = (function() {
   function Player(data) {
     this.data = data;
     this.shoot = bind(this.shoot, this);
-    this.screenWidth = this.data.scrSize.x - 30;
+    this.screenWidth = this.data.scrSize.x - 40;
     this.size = {
-      width: 20,
-      height: 15
+      width: 28,
+      height: 12
     };
     this.pos = {
       x: (this.data.scrSize.x / 2) - (this.size.width / 2),
       y: this.data.scrSize.y - 30
+    };
+    this.icon = {
+      x: 138.5,
+      y: 75
     };
     this.x = this.pos.x;
     this.conrtoller();

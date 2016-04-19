@@ -8,11 +8,16 @@ class InitGame
 		@ctx = @screen.getContext '2d'
 		@scrSize = x: @screen.width, y: @screen.height
 		@objects = []
+		@icons = new Image
+		@icons.src = './images/icons.png'
+
 
 	start: ->
-		do @addEnemies
-		@objects.push new Player @
-		do @tick
+		@icons.onload = =>
+			@objects.push new Player @
+			do @addEnemies
+			do @tick
+
 
 	tick: ->
 		do @update
@@ -52,17 +57,17 @@ class InitGame
 			else
 				do item.update if item.update
 
+
 	draw: ->
 		do @clean
-		@objects.forEach (item) =>
-			@drawRect item
+		@objects.forEach (obj) =>
+			@ctx.fillStyle = "rgba(0, 0, 0, 0)"
+			@ctx.fillRect obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
+			@ctx.drawImage @icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
 
-	drawRect: (obj) ->
-		@ctx.fillStyle = "#0A8D00"
-		@ctx.fillRect obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
 
 	addEnemies: ->
-		size = width: 20, height: 20
+		size = width: 29, height: 25
 		x = 3
 		y = 3
 		for i in [0...8]
@@ -77,8 +82,8 @@ class InitGame
 				@objects.push new Enemy @, pos, size, ind
 			y = 3
 
-	collision : (o1, o2) ->
 
+	collision : (o1, o2) ->
 		!(o1 == o2 or
 			o1.pos.x + o1.size.width < o2.pos.x or
 			o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 or

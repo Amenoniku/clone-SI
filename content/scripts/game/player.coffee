@@ -4,9 +4,10 @@ Bullet = require "./bullet"
 
 class Player
 	constructor: (@data) ->
-		@screenWidth = @data.scrSize.x - 30
-		@size = width: 20, height: 15
+		@screenWidth = @data.scrSize.x - 40
+		@size = width: 28, height: 12
 		@pos = x: (@data.scrSize.x / 2) - (@size.width / 2), y: @data.scrSize.y - 30
+		@icon = x: 138.5, y: 75
 		@x = @pos.x
 		do @conrtoller
 
