@@ -2,27 +2,42 @@
 
 Player = require "./player"
 Enemy = require './enemy'
+Score = require "./score"
+Bullet = require "./bullet"
+
+
 
 class InitGame
 	constructor: (@screen) ->
 		@ctx = @screen.getContext '2d'
 		@scrSize = x: @screen.width, y: @screen.height
 		@objects = []
+		@stopAnimation = no
 		@icons = new Image
 		@icons.src = './images/icons.png'
 
 
 	start: ->
 		@icons.onload = =>
-			@objects.push new Player @
-			do @addEnemies
+			do @addObjects
 			do @tick
+
+	addObjects: ->
+		@objects.push new Score @
+		@objects.push new Player @
+		do @addEnemies
 
 
 	tick: ->
-		do @update
-		do @draw
-		requestAnimationFrame @tick.bind @
+		unless @stopAnimation
+			do @update
+			do @draw
+			requestAnimationFrame @tick.bind @
+		else
+			setTimeout =>
+				console.log 'stop'
+				do @tick
+			, 100
 
 
 	clean: ->
@@ -33,7 +48,13 @@ class InitGame
 
 		notCollision = (o1) =>
 			@objects.filter (o2) =>
-				@collision o1, o2
+				coll = @collision o1, o2
+				if coll and o1 instanceof Enemy
+					@objects[0].up()
+				if coll and o1 instanceof Player
+					@screen.removeEventListener 'click', o1.shoot
+				# @screen.removeEventListener 'mousemove', o1.move
+				coll
 			.length == 0
 
 		@objects = @objects.filter notCollision
@@ -44,12 +65,17 @@ class InitGame
 		lose = @objects.some (item) ->
 			item instanceof Player
 
-		if not win
+		unless win
 			alert "Поздравляю!!! Вы победили Инопланетных Захватчиков! Но радары засекли еще одну волну! Нажми \"Ok\" чтобы разгромить врага!"
-			location.reload on
-		if not lose
-			alert "К сожалению ваш корабль был разбить суровым натиском инопланетных захватчиков но ты успел эвакуироваться на базу где тебя ждет новый корабль! Нажми \"Ok\" чтобы дать отпор врагу еще раз!"
-			location.reload on
+			do @addEnemies
+
+		unless lose
+			@stopAnimation = on
+			# alert "К сожалению ваш корабль был разбить суровым натиском инопланетных захватчиков но ты успел эвакуироваться на базу где тебя ждет новый корабль! Нажми \"Ok\" чтобы дать отпор врагу еще раз!"
+			@objects = []
+			do @addObjects
+			@stopAnimation = no
+
 
 		@objects.forEach (item, i) =>
 			if item.pos.y < 0 or item.pos.y >= @scrSize.y
@@ -61,9 +87,14 @@ class InitGame
 	draw: ->
 		do @clean
 		@objects.forEach (obj) =>
+			if obj instanceof Score
+				@ctx.fillStyle = "rgba(255, 255, 255, 1)"
+				@ctx.font = obj.font
+				@ctx.fillText obj.text, obj.pos.x, obj.pos.y
+
 			@ctx.fillStyle = "rgba(0, 0, 0, 0)"
 			@ctx.fillRect obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
-			@ctx.drawImage @icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
+			if obj.icon then @ctx.drawImage @icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height
 
 
 	addEnemies: ->
@@ -84,11 +115,12 @@ class InitGame
 
 
 	collision : (o1, o2) ->
-		!(o1 == o2 or
+		if o1 instanceof Score or o2 instanceof Score then return
+		else !(o1 == o2 or
 			o1.pos.x + o1.size.width < o2.pos.x or
-			o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 or
+			o1.pos.y + o1.size.height < o2.pos.y or
 			o1.pos.x > o2.pos.x + o2.size.width or
-			o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2
+			o1.pos.y > o2.pos.y + o2.size.height
 		)
 
 module.exports = InitGame

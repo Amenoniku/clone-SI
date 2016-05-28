@@ -8,17 +8,28 @@ require('./game/main');
 var Bullet;
 
 Bullet = (function() {
-  function Bullet(pos, gravity) {
+  function Bullet(pos, gravity, where) {
+    var iconEnemyBullet, iconPlayerBullet;
     this.pos = pos;
     this.gravity = gravity;
     this.size = {
       width: 3,
       height: 6
     };
-    this.icon = {
+    iconEnemyBullet = {
       x: 152,
       y: 65
     };
+    iconPlayerBullet = {
+      x: 157,
+      y: 65
+    };
+    if (where === "Player") {
+      this.icon = iconPlayerBullet;
+    }
+    if (where === "Enemy") {
+      this.icon = iconEnemyBullet;
+    }
   }
 
   Bullet.prototype.update = function() {
@@ -44,7 +55,7 @@ Bullet = require("./bullet");
 
 Enemy = (function() {
   function Enemy(data, pos, size, ind) {
-    var icon, length, randomIcons;
+    var icon, randomIcons;
     this.data = data;
     this.pos = pos;
     this.size = size;
@@ -53,9 +64,6 @@ Enemy = (function() {
     this.speed = 1;
     randomIcons = [
       icon = {
-        x: 9,
-        y: 0
-      }, icon = {
         x: 57,
         y: 0
       }, icon = {
@@ -78,8 +86,7 @@ Enemy = (function() {
         y: 30
       }
     ];
-    length = Math.floor(Math.random() * randomIcons.length);
-    this.icon = randomIcons[length];
+    this.icon = randomIcons[Math.floor(Math.random() * randomIcons.length)];
   }
 
   Enemy.prototype.update = function() {
@@ -102,12 +109,12 @@ Enemy = (function() {
     if (Math.random() < 0.04 && !this.isLower(this)) {
       bulletCoors = {
         x: this.pos.x + this.size.width / 2,
-        y: this.pos.y + this.size.height / 2 + this.size.height / 2
+        y: this.pos.y + this.size.height / 2 + this.size.height / 2 + 1
       };
       bullet = new Bullet(bulletCoors, {
         speed: 3,
         dir: true
-      });
+      }, 'Enemy');
       return this.data.objects.push(bullet);
     }
   };
@@ -121,11 +128,15 @@ module.exports = Enemy;
 
 },{"./bullet":2}],4:[function(require,module,exports){
 'use strict';
-var Enemy, InitGame, Player;
+var Bullet, Enemy, InitGame, Player, Score;
 
 Player = require("./player");
 
 Enemy = require('./enemy');
+
+Score = require("./score");
+
+Bullet = require("./bullet");
 
 InitGame = (function() {
   function InitGame(screen) {
@@ -136,6 +147,7 @@ InitGame = (function() {
       y: this.screen.height
     };
     this.objects = [];
+    this.stopAnimation = false;
     this.icons = new Image;
     this.icons.src = './images/icons.png';
   }
@@ -143,17 +155,31 @@ InitGame = (function() {
   InitGame.prototype.start = function() {
     return this.icons.onload = (function(_this) {
       return function() {
-        _this.objects.push(new Player(_this));
-        _this.addEnemies();
+        _this.addObjects();
         return _this.tick();
       };
     })(this);
   };
 
+  InitGame.prototype.addObjects = function() {
+    this.objects.push(new Score(this));
+    this.objects.push(new Player(this));
+    return this.addEnemies();
+  };
+
   InitGame.prototype.tick = function() {
-    this.update();
-    this.draw();
-    return requestAnimationFrame(this.tick.bind(this));
+    if (!this.stopAnimation) {
+      this.update();
+      this.draw();
+      return requestAnimationFrame(this.tick.bind(this));
+    } else {
+      return setTimeout((function(_this) {
+        return function() {
+          console.log('stop');
+          return _this.tick();
+        };
+      })(this), 100);
+    }
   };
 
   InitGame.prototype.clean = function() {
@@ -165,7 +191,15 @@ InitGame = (function() {
     notCollision = (function(_this) {
       return function(o1) {
         return _this.objects.filter(function(o2) {
-          return _this.collision(o1, o2);
+          var coll;
+          coll = _this.collision(o1, o2);
+          if (coll && o1 instanceof Enemy) {
+            _this.objects[0].up();
+          }
+          if (coll && o1 instanceof Player) {
+            _this.screen.removeEventListener('click', o1.shoot);
+          }
+          return coll;
         }).length === 0;
       };
     })(this);
@@ -178,11 +212,13 @@ InitGame = (function() {
     });
     if (!win) {
       alert("Поздравляю!!! Вы победили Инопланетных Захватчиков! Но радары засекли еще одну волну! Нажми \"Ok\" чтобы разгромить врага!");
-      location.reload(true);
+      this.addEnemies();
     }
     if (!lose) {
-      alert("К сожалению ваш корабль был разбить суровым натиском инопланетных захватчиков но ты успел эвакуироваться на базу где тебя ждет новый корабль! Нажми \"Ok\" чтобы дать отпор врагу еще раз!");
-      location.reload(true);
+      this.stopAnimation = true;
+      this.objects = [];
+      this.addObjects();
+      this.stopAnimation = false;
     }
     return this.objects.forEach((function(_this) {
       return function(item, i) {
@@ -201,9 +237,16 @@ InitGame = (function() {
     this.clean();
     return this.objects.forEach((function(_this) {
       return function(obj) {
+        if (obj instanceof Score) {
+          _this.ctx.fillStyle = "rgba(255, 255, 255, 1)";
+          _this.ctx.font = obj.font;
+          _this.ctx.fillText(obj.text, obj.pos.x, obj.pos.y);
+        }
         _this.ctx.fillStyle = "rgba(0, 0, 0, 0)";
         _this.ctx.fillRect(obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
-        return _this.ctx.drawImage(_this.icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
+        if (obj.icon) {
+          return _this.ctx.drawImage(_this.icons, obj.icon.x, obj.icon.y, obj.size.width, obj.size.height, obj.pos.x, obj.pos.y, obj.size.width, obj.size.height);
+        }
       };
     })(this));
   };
@@ -243,7 +286,11 @@ InitGame = (function() {
   };
 
   InitGame.prototype.collision = function(o1, o2) {
-    return !(o1 === o2 || o1.pos.x + o1.size.width < o2.pos.x || o1.pos.y + o1.size.height / 2 < o2.pos.y - o2.size.height / 2 || o1.pos.x > o2.pos.x + o2.size.width || o1.pos.y - o1.size.height / 2 > o2.pos.y + o2.size.height / 2);
+    if (o1 instanceof Score || o2 instanceof Score) {
+
+    } else {
+      return !(o1 === o2 || o1.pos.x + o1.size.width < o2.pos.x || o1.pos.y + o1.size.height < o2.pos.y || o1.pos.x > o2.pos.x + o2.size.width || o1.pos.y > o2.pos.y + o2.size.height);
+    }
   };
 
   return InitGame;
@@ -253,7 +300,7 @@ InitGame = (function() {
 module.exports = InitGame;
 
 
-},{"./enemy":3,"./player":6}],5:[function(require,module,exports){
+},{"./bullet":2,"./enemy":3,"./player":6,"./score":7}],5:[function(require,module,exports){
 'use strict';
 var Game, game, gameScreen;
 
@@ -276,6 +323,7 @@ Bullet = require("./bullet");
 Player = (function() {
   function Player(data) {
     this.data = data;
+    this.move = bind(this.move, this);
     this.shoot = bind(this.shoot, this);
     this.screenWidth = this.data.scrSize.x - 40;
     this.size = {
@@ -291,7 +339,8 @@ Player = (function() {
       y: 75
     };
     this.x = this.pos.x;
-    this.conrtoller();
+    this.data.screen.addEventListener("mousemove", this.move);
+    this.data.screen.addEventListener("click", this.shoot);
   }
 
   Player.prototype.update = function() {
@@ -313,17 +362,12 @@ Player = (function() {
     }, {
       speed: 4,
       dir: false
-    });
+    }, 'Player');
     return this.data.objects.push(bullet);
   };
 
-  Player.prototype.conrtoller = function() {
-    this.data.screen.addEventListener("mousemove", (function(_this) {
-      return function(e) {
-        return _this.x = e.offsetX - _this.size.width / 2;
-      };
-    })(this));
-    return this.data.screen.addEventListener("click", this.shoot);
+  Player.prototype.move = function(event) {
+    return this.x = event.offsetX - this.size.width / 2;
   };
 
   return Player;
@@ -333,4 +377,34 @@ Player = (function() {
 module.exports = Player;
 
 
-},{"./bullet":2}]},{},[1]);
+},{"./bullet":2}],7:[function(require,module,exports){
+'use strict';
+var Score;
+
+Score = (function() {
+  function Score(data) {
+    this.score = 0;
+    this.size = {
+      width: 28,
+      height: 12
+    };
+    this.pos = {
+      x: 0,
+      y: data.scrSize.y - this.size.height + 9
+    };
+    this.font = "bold " + this.size.height + "px Arial";
+    this.text = "Score: " + this.score;
+  }
+
+  Score.prototype.up = function() {
+    return this.text = "Score: " + (++this.score);
+  };
+
+  return Score;
+
+})();
+
+module.exports = Score;
+
+
+},{}]},{},[1]);
