@@ -148,6 +148,7 @@ InitGame = (function() {
     };
     this.objects = [];
     this.stopAnimation = false;
+    this.logicTimer = false;
     this.icons = new Image;
     this.icons.src = './images/icons.png';
   }
@@ -156,7 +157,8 @@ InitGame = (function() {
     return this.icons.onload = (function(_this) {
       return function() {
         _this.addObjects();
-        return _this.tick();
+        _this.tick();
+        return _this.logic();
       };
     })(this);
   };
@@ -169,7 +171,6 @@ InitGame = (function() {
 
   InitGame.prototype.tick = function() {
     if (!this.stopAnimation) {
-      this.update();
       this.draw();
       return requestAnimationFrame(this.tick.bind(this));
     } else {
@@ -180,6 +181,14 @@ InitGame = (function() {
         };
       })(this), 100);
     }
+  };
+
+  InitGame.prototype.logic = function() {
+    return this.logicTimer = setInterval((function(_this) {
+      return function() {
+        return _this.update();
+      };
+    })(this), 1000 / 60);
   };
 
   InitGame.prototype.clean = function() {

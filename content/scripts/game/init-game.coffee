@@ -13,6 +13,7 @@ class InitGame
 		@scrSize = x: @screen.width, y: @screen.height
 		@objects = []
 		@stopAnimation = no
+		@logicTimer = no
 		@icons = new Image
 		@icons.src = './images/icons.png'
 
@@ -21,6 +22,7 @@ class InitGame
 		@icons.onload = =>
 			do @addObjects
 			do @tick
+			do @logic
 
 	addObjects: ->
 		@objects.push new Score @
@@ -30,7 +32,6 @@ class InitGame
 
 	tick: ->
 		unless @stopAnimation
-			do @update
 			do @draw
 			requestAnimationFrame @tick.bind @
 		else
@@ -39,6 +40,10 @@ class InitGame
 				do @tick
 			, 100
 
+	logic: ->
+		@logicTimer = setInterval =>
+			do @update
+		, 1000 / 60
 
 	clean: ->
 		@ctx.clearRect 0, 0, @scrSize.x, @scrSize.y
